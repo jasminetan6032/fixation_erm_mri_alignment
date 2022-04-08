@@ -16,7 +16,9 @@ Running the script:
 
 For the most part, this script uses Python-standard libraries - packages and modules by default included in a Python version. The below libraries are NOT included, and depending on one's environment, may need to be installed.
 
-  pandas
-  dateutil
-  numpy
+  1. pandas
+  2. dateutil
+  3. numpy 
+
+^^ If you are using Anaconda or a similar data-science focused Python install - these will be included with your Python version.
   
