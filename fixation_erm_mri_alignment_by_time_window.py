@@ -119,8 +119,9 @@ fixation_visit_dates = []
 fixation_data_paths = []
 
 erm_data_paths = []
+
 # iterate through fixation directory
-for subject_folder_path, directory_names, filenames in os.walk(cfg.fix_dir):
+for subject_folder_path, directory_names, filenames in os.walk(cfg.dir_of_interest):
     path_id = os.path.split(subject_folder_path)
     if 'visit' not in path_id[1]:
         continue
