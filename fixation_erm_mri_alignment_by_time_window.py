@@ -7,6 +7,7 @@ import numpy as np
 import datetime
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
+import mne
 """
 THIS SCRIPT ASSUMES THAT AN FMRI (RESTING STATE) WILL ALWAYS BE ACQUIRED WITH A STRUCTURAL MRI (MEMPRAGE)
 include all subjects who had MEG fixation and ERM (hopefully)
@@ -115,57 +116,38 @@ def find_closest_matches(sid, matches, fix_datestr, fixdate_parsed, recons_dir, 
 
 
 subject_ids = []
-fixation_visit_dates = []
-fixation_data_paths = []
-
+paradigm_data_dates = []
+paradigm_data_paths = []
 erm_data_paths = []
 
-# iterate through fixation directory
-for subject_folder_path, directory_names, filenames in os.walk(cfg.dir_of_interest):
-    path_id = os.path.split(subject_folder_path)
-    if 'visit' not in path_id[1]:
-        continue
-    visit_folder = path_id[1]
-    # check if visit_folder is correctly formatted...
-    if len(visit_folder.split('_')[1]) != 8:
-        continue
-    subject = os.path.split(path_id[0])[1]
-
-    if subject.isnumeric() or 'AC' in subject:
-        # acquire filenames
-        fix_fname = filenames[0]
-        fix_data_path = os.path.join(subject_folder_path, fix_fname)
-        visit_date = visit_folder.split('_')[1]
-        # we now have subject ID (subject), fixation date (visit_date), fixation path (path_to_fix_file)
-        # append each of these
-        subject_ids.append(subject)
-        fixation_visit_dates.append(visit_date)
-        fixation_data_paths.append(fix_data_path)
-    
-        # now begin looking at ERM... dates SHOULD match
-        subject_erm_folder = os.path.join(cfg.erm_dir, subject)
-        subject_erm_visit_dir = os.path.join(subject_erm_folder, visit_date)
-        # check if subject ERM folder exists
-        if os.path.exists(subject_erm_folder):
-            if os.path.exists(subject_erm_visit_dir):
-                erm_files = sorted(os.listdir(subject_erm_visit_dir))
-                if len(erm_files) > 0:
-                    erm_fname = erm_files[0]
-                    erm_data_path = os.path.join(subject_erm_visit_dir, erm_fname)
-                else:
-                    # visit subfolder created but no data...
-                    erm_data_path = 'Missing ERM data'
+for path, directory_names, filenames in os.walk(cfg.dir_of_interest):
+    last_6_digits = path[-6:] #check last 6 characters of folder name which can be an ID or a date
+    if last_6_digits.isnumeric(): #only look into those that have either the participant ID or a date
+        for filename in filenames:
+            if cfg.paradigm + '_run' not in filename: #check for cfg.paradigm name and run
+                continue
             else:
-                # visit subfolder not created...
-                erm_data_path = 'ERM visit subfolder not created'
-        else:
-            erm_data_path = 'ERM folder missing'
-    
-        erm_data_paths.append(erm_data_path)
-
-# build fixation-ERM dataframe
-fix_erm_df = pd.DataFrame(data={'Subject': subject_ids, 'Fixation_date': fixation_visit_dates,
-                                'Fixation_data_path': fixation_data_paths, 'ERM_data_path': erm_data_paths})
+                if 'raw.fif' in filename: # if it is a raw.fif file, 
+                    subject_id = filename[:6]
+                    subject_ids.append(subject_id) 
+                    paradigm_data_path = os.path.join(path, filename) 
+                    paradigm_data_paths.append(paradigm_data_path) #write both file and path to dataframe
+                    raw = mne.io.read_raw_fif(paradigm_data_path) #open .fif file with MNE python 
+                    date = raw.info['meas_date'].date() #Locate date of data collection
+                    paradigm_data_dates.append(date.strftime("%Y%m%d"))
+                    erm_filename = subject_id +'_erm_raw.fif'
+                    subject_erm_path = os.path.join(cfg.erm_dir, subject_id,date.strftime("%Y%m%d"),erm_filename)
+                    # check if subject ERM folder exists
+                    if os.path.exists(subject_erm_path):
+                        erm_path = subject_erm_path
+                    else:
+                        erm_path = 'Missing ERM data'
+                
+                    erm_data_paths.append(erm_path)
+                    
+# combine all info in data frame and save to csv
+fix_erm_df = pd.DataFrame(data={'Subject': subject_ids, 'Date_collected': paradigm_data_dates,
+                                'Paradigm_data_path': paradigm_data_paths, 'ERM_data_paths': erm_data_paths})
 
 smri_rank1_dates = []
 smri_rank2_dates = []
@@ -186,7 +168,7 @@ fmri_rank3_paths = []
 for _, subj_row in fix_erm_df.iterrows():
 
     sid = subj_row['Subject'] # looks like leading zeroes have been preserved?
-    fix_datestr = subj_row['Fixation_date']
+    fix_datestr = subj_row['Date_collected']
     fixdate_parsed = parser.parse(fix_datestr)
 
     # first filter recons dir for subject folders matching subject ID
@@ -261,8 +243,8 @@ for _, subj_row in fix_erm_df.iterrows():
     fmri_rank2_paths.append(fmri_rank2_path)
     fmri_rank3_paths.append(fmri_rank3_path)
 
-fix_erm_mri_data = {'Subject': subject_ids, 'Fixation date': fixation_visit_dates,
-                    'Fixation data path': fixation_data_paths, 'ERM data path': erm_data_paths,
+fix_erm_mri_data = {'Subject': subject_ids, 'Date_collected': paradigm_data_dates,
+                    'Paradigm_data_path': paradigm_data_paths, 'ERM data path': erm_data_paths,
                     'sMRI_date_rank1': smri_rank1_dates, 'sMRI_path_rank1': smri_rank1_paths,
                     'sMRI_date_rank2': smri_rank2_dates, 'sMRI_path_rank2': smri_rank2_paths,
                     'sMRI_date_rank3': smri_rank3_dates, 'sMRI_path_rank3': smri_rank3_paths,
@@ -291,10 +273,10 @@ within_24mos_paths = []
 for i, subj_row in fix_erm_mri_df.iterrows():
     
     subj = subj_row['Subject']
-    fix_date = subj_row['Fixation date']
+    fix_date = subj_row['Date_collected']
     fix_date_parsed = parser.parse(fix_date)
     
-    fixdate_path = subj_row['Fixation data path']
+    fixdate_path = subj_row['Paradigm_data_path']
     ermdate_path = subj_row['ERM data path']
     
     if fix_date_parsed < since_date_parsed:
@@ -362,7 +344,7 @@ for i, subj_row in fix_erm_mri_df.iterrows():
             
                         
 time_window_filtered_alignment_data = {'Subject': subjs,
-                                       'Fixation date': subj_fixdates, 'Fixation data path': subj_fixdate_paths, 'ERM data path': subj_erm_paths,
+                                       'Date_collected': subj_fixdates, 'Paradigm_data_path': subj_fixdate_paths, 'ERM data path': subj_erm_paths,
                                        'mri_6mo': within_6mos, 'mri_6mo_path': within_6mos_paths,
                                        'mri_12mo': within_12mos, 'mri_12mo_path': within_12mos_paths,
                                        'mri_24mo': within_24mos, 'mri_24mo_path': within_24mos_paths}
