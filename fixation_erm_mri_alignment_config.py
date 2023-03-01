@@ -14,4 +14,5 @@ rs_mri_dir = join(transcend_dir, 'MRI', 'WMA', 'rs_MRI')
 # FORMAT MUST BE: YYYYMMDD
 # example: August 29th, 2019 ---> 20190829
 # PLEASE KEEP THIS VARIABLE NAME THE SAME - ELSE YOU WILL HAVE TO EDIT ITS IMPORT INTO THE MAIN SCRIPT ITSELF
-since_datestr = '20201113'
+since_datestr = '20170315'
+#For AttenVis paradigm: since_datestr = '20190901'

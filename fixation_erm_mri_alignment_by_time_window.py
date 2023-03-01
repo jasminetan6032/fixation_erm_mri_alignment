@@ -352,8 +352,8 @@ time_window_filtered_alignment_df = pd.DataFrame(data=time_window_filtered_align
 
 today_formatted = datetime.datetime.today().strftime('%Y%m%d')
 
-entire_alignment_savename = f'Fixation_ERM_MRI_alignment_updated_{today_formatted}.csv'
-time_window_df_savename = f'Fixation_ERM_MRI_alignment_from_{since_date}_to_{today_formatted}.csv'
+entire_alignment_savename = cfg.paradigm + f'_ERM_MRI_alignment_updated_{today_formatted}.csv'
+time_window_df_savename = cfg.paradigm + f'_ERM_MRI_alignment_from_{since_date}_to_{today_formatted}.csv'
 
 # entire_alignment_save_msg = f'*** Saving the alignment .csv from all-time as {entire_alignment_savename}...
 # \n'
