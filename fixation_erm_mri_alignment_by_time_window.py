@@ -124,26 +124,29 @@ for path, directory_names, filenames in os.walk(cfg.dir_of_interest):
     last_6_digits = path[-6:] #check last 6 characters of folder name which can be an ID or a date
     if last_6_digits.isnumeric(): #only look into those that have either the participant ID or a date
         for filename in filenames:
-            if cfg.paradigm + '_run' not in filename: #check for cfg.paradigm name and run
+            if 'AC' in filename:
                 continue
-            else:
-                if 'raw.fif' in filename: # if it is a raw.fif file, 
-                    subject_id = filename[:6]
-                    subject_ids.append(subject_id) 
-                    paradigm_data_path = os.path.join(path, filename) 
-                    paradigm_data_paths.append(paradigm_data_path) #write both file and path to dataframe
-                    raw = mne.io.read_raw_fif(paradigm_data_path) #open .fif file with MNE python 
-                    date = raw.info['meas_date'].date() #Locate date of data collection
-                    paradigm_data_dates.append(date.strftime("%Y%m%d"))
-                    erm_filename = subject_id +'_erm_raw.fif'
-                    subject_erm_path = os.path.join(cfg.erm_dir, subject_id,date.strftime("%Y%m%d"),erm_filename)
-                    # check if subject ERM folder exists
-                    if os.path.exists(subject_erm_path):
-                        erm_path = subject_erm_path
-                    else:
-                        erm_path = 'Missing ERM data'
-                
-                    erm_data_paths.append(erm_path)
+            else:              
+                if cfg.paradigm + '_run' not in filename: #check for cfg.paradigm name and run
+                    continue
+                else:
+                    if 'raw.fif' in filename: # if it is a raw.fif file, 
+                        subject_id = filename[:6]
+                        subject_ids.append(subject_id) 
+                        paradigm_data_path = os.path.join(path, filename) 
+                        paradigm_data_paths.append(paradigm_data_path) #write both file and path to dataframe
+                        raw = mne.io.read_raw_fif(paradigm_data_path) #open .fif file with MNE python 
+                        date = raw.info['meas_date'].date() #Locate date of data collection
+                        paradigm_data_dates.append(date.strftime("%Y%m%d"))
+                        erm_filename = subject_id +'_erm_raw.fif'
+                        subject_erm_path = os.path.join(cfg.erm_dir, subject_id,date.strftime("%Y%m%d"),erm_filename)
+                        # check if subject ERM folder exists
+                        if os.path.exists(subject_erm_path):
+                            erm_path = subject_erm_path
+                        else:
+                            erm_path = 'Missing ERM data'
+                    
+                        erm_data_paths.append(erm_path)
                     
 # combine all info in data frame and save to csv
 fix_erm_df = pd.DataFrame(data={'Subject': subject_ids, 'Date_collected': paradigm_data_dates,
