@@ -1,7 +1,7 @@
 from os.path import join
 
 transcend_dir = '/autofs/cluster/transcend'
-paradigm = 'fix'
+paradigm = 'AttenAud'
 
 dir_of_interest = join(transcend_dir, 'MEG', paradigm)
 erm_dir = join(transcend_dir, 'MEG', 'erm')
@@ -14,5 +14,12 @@ rs_mri_dir = join(transcend_dir, 'MRI', 'WMA', 'rs_MRI')
 # FORMAT MUST BE: YYYYMMDD
 # example: August 29th, 2019 ---> 20190829
 # PLEASE KEEP THIS VARIABLE NAME THE SAME - ELSE YOU WILL HAVE TO EDIT ITS IMPORT INTO THE MAIN SCRIPT ITSELF
-since_datestr = '20070101'
+
+all_dates_dict  = {'fix'       : '20220408', 
+                   'AttenAud'  : '20190314', 
+                   'AttenVis'  : '20190314', 
+                   'Misophonia': '20230301'}
+
+since_datestr   = all_dates_dict[paradigm] 
+
 #For AttenVis paradigm: since_datestr = '20190901'
